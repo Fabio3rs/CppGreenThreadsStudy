@@ -21,7 +21,7 @@ class GreenThread {
 
     void prepare_stack();
 
-    static void call_wrapper(GreenThread &gthread);
+    static void call_wrapper [[noreturn]] (GreenThread &gthread);
 
   public:
     auto get_manager() const { return thrmanager; }

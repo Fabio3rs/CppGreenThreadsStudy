@@ -6,32 +6,33 @@
 #include <iostream>
 #include <thread>
 
-uintptr_t other_number = 1234;
-uintptr_t test_uintptr = 10000;
+static uintptr_t other_number = 1234;
+static uintptr_t test_uintptr = 10000;
 
-int thread_function(GreenThreadMgr &thrmgr) {
-    std::array<int, 4096> arr;
+static int thread_function(GreenThreadMgr &thrmgr) {
+    std::array<unsigned int, 4096> arr;
+
+    void *currentptr = thrmgr.get_current();
 
     for (size_t i = 0; i < arr.size(); i++)
-        arr[i] = i;
+        arr[i] = static_cast<unsigned int>(i);
     test_uintptr += other_number;
-    printf("thread_function %zu    threadc %p\n", test_uintptr,
-           thrmgr.get_current());
+    printf("thread_function %zu    threadc %p\n", test_uintptr, currentptr);
 
     thrmgr.yield();
     test_uintptr *= 2;
 
     printf("thread_function after yield %zu    threadc %p\n", test_uintptr,
-           thrmgr.get_current());
+           currentptr);
 
     thrmgr.yield();
 
-    printf("thread_function exit %zu    threadc %p\n", test_uintptr,
-           thrmgr.get_current());
-
     for (size_t i = 0; i < arr.size(); i++)
-        std::cout << reinterpret_cast<uintptr_t>(thrmgr.get_current()) << " "
-                  << arr[i] << std::endl;
+        std::cout << reinterpret_cast<uintptr_t>(currentptr) << " " << arr[i]
+                  << std::endl;
+
+    printf("thread_function exit %zu    threadc %p\n", test_uintptr,
+           currentptr);
     return 0;
 }
 

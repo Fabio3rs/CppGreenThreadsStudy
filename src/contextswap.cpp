@@ -2,7 +2,7 @@
 
 extern "C" {
     
-    __attribute__((naked)) void context_swap(void *currentctx, void *newctx)
+    __attribute__((naked)) void context_swap(void */***/, void */***/)
     {
         __asm__(
             "mov %rax, 0x0(%rdi)\n"

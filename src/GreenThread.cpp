@@ -16,11 +16,10 @@ struct context {
         r12, r13, r14, r15;
 };
 
-void GreenThread::call_wrapper(GreenThread &gthread) {
+void GreenThread::call_wrapper [[noreturn]] (GreenThread &gthread)  {
     gthread.thrfn(*gthread.get_manager());
 
     gthread.get_manager()->end_current();
-    printf("Should not to be here %p\n", &gthread);
     exit(1);
 }
 
