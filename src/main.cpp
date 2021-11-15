@@ -15,7 +15,11 @@ int thread_function(GreenThreadMgr &thrmgr) {
     thrmgr.yield();
     test_uintptr *= 2;
 
-    printf("thread_function after yield %zu\n", test_uintptr);
+    printf("thread_function after yield %zu    threadc %p\n", test_uintptr, thrmgr.get_current());
+
+    thrmgr.yield();
+
+    printf("thread_function exit %zu    threadc %p\n", test_uintptr, thrmgr.get_current());
 
     return 0;
 }
@@ -32,10 +36,6 @@ int main() {
 
     printf("main pos yield 1 %zu\n", test_uintptr);
 
-    mgr.yield();
-    mgr.yield();
-    mgr.yield();
-    mgr.yield();
     mgr.yield();
     printf("main pos yield 2 %zu\n", test_uintptr);
     printf("Exiting normally\n");

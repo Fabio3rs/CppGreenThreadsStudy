@@ -44,4 +44,10 @@ class GreenThreadMgr {
     void end_current();
 
     GreenThreadMgr();
+    
+    ~GreenThreadMgr() {
+        while (threads.size() > 1) {
+            yield();
+        }
+    }
 };
