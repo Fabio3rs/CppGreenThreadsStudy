@@ -27,7 +27,7 @@ void GreenThread::call_wrapper(GreenThread &gthread) {
 static constexpr size_t STACK_SIZE = 1024 * 1024;
 
 void GreenThread::prepare_stack() {
-    ctx->rsp.regptr = stack.get() + STACK_SIZE / sizeof(stack[0]);
+    ctx->rsp.regptr = stack.get() + STACK_SIZE - 1;
     ctx->rbp = ctx->rsp;
     ctx->rcx.regptr = this;
 
