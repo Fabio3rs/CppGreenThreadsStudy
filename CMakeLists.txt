@@ -30,4 +30,5 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     target_compile_options(${myprojectname} PRIVATE -Weverything -Wno-global-constructors $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>  -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-exit-time-destructors)
 endif()
 
+target_link_libraries(${myprojectname} PRIVATE pthread)
 

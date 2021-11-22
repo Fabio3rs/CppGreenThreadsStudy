@@ -38,9 +38,10 @@ extern "C" {
         __asm__ ("ret\n");
     }
 
-    __attribute__((naked)) void rcx_to_rdi_mov()
+    __attribute__((naked)) void rcx_to_rdi_rbx_to_rsi_mov()
     {
         __asm__ ("mov %rcx, %rdi\n");
+        __asm__ ("mov %rbx, %rsi\n");
         __asm__ ("ret\n");
     }
 }

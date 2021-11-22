@@ -16,8 +16,8 @@ struct context {
         r12, r13, r14, r15;
 };
 
-void GreenThread::call_wrapper [[noreturn]] (GreenThread &gthread)  {
-    gthread.thrfn(*gthread.get_manager());
+void GreenThread::call_wrapper [[noreturn]] (GreenThread &gthread) {
+    gthread.thrfn(*gthread.get_manager(), gthread.argval);
 
     gthread.get_manager()->end_current();
     exit(1);
@@ -29,31 +29,58 @@ void GreenThread::prepare_stack() {
     ctx->rsp.regptr = stack.get() + STACK_SIZE - 1;
     ctx->rbp = ctx->rsp;
     ctx->rcx.regptr = this;
+    ctx->rbx.regptr = argval;
 
     uintptr_t *stck = reinterpret_cast<uintptr_t *>(ctx->rsp.regptr);
     stck--;
     *stck = reinterpret_cast<uintptr_t>(call_wrapper);
     stck--;
-    *stck = reinterpret_cast<uintptr_t>(rcx_to_rdi_mov);
+    *stck = reinterpret_cast<uintptr_t>(rcx_to_rdi_rbx_to_rsi_mov);
 
     ctx->rsp.regptr = stck;
 }
 
-GreenThread::GreenThread(GreenThread::greenfn_t fun, GreenThreadMgr *mgrhandle)
+void GreenThread::set_arg(void *arg) { argval = ctx->rbx.regptr = arg; }
+
+void *GreenThread::prepare_stack(size_t reserve) {
+    ctx->rsp.regptr = stack.get() + STACK_SIZE - 1;
+    ctx->rbp = ctx->rsp;
+    ctx->rcx.regptr = this;
+    set_arg(argval);
+
+    uintptr_t *stck = reinterpret_cast<uintptr_t *>(ctx->rsp.regptr);
+    stck -= (reserve + sizeof(uintptr_t) - 1) / sizeof(uintptr_t);
+
+    void *result = stck;
+
+    stck--;
+    *stck = reinterpret_cast<uintptr_t>(call_wrapper);
+    stck--;
+    *stck = reinterpret_cast<uintptr_t>(rcx_to_rdi_rbx_to_rsi_mov);
+
+    ctx->rsp.regptr = stck;
+
+    return result;
+}
+
+GreenThread::GreenThread(GreenThread::greenfn_t fun, GreenThreadMgr *mgrhandle,
+                         void *arg)
     : ctx(std::make_shared<context>()),
       stack(std::make_unique<uintptr_t[]>(STACK_SIZE)), thrmanager(mgrhandle) {
     thrfn = fun;
     to_delete = false;
+    argval = arg;
 }
 
 GreenThread::GreenThread(GreenThreadMgr *mgrhandle)
     : ctx(std::make_shared<context>()), thrmanager(mgrhandle) {
     to_delete = false;
+    argval = nullptr;
 }
 
 void GreenThreadMgr::yield() {
     auto it = current_it;
-    
+
     do {
         if ((++it) == threads.end()) {
             it = threads.begin();
@@ -100,8 +127,8 @@ void GreenThreadMgr::end_current() {
     yield();
 }
 
-size_t GreenThreadMgr::new_thread(GreenThread::greenfn_t fun) {
-    threads.push_back({fun, this});
+size_t GreenThreadMgr::new_thread(GreenThread::greenfn_t fun, void *argval) {
+    threads.push_back({fun, this, argval});
     threads.back().prepare_stack();
     return threads.size();
 }
