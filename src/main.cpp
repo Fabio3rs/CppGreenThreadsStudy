@@ -72,6 +72,16 @@ static void real_thread() {
                           3, 100);
     mgr.new_thread_custom(other_thread_function, "This is a test", 100, 1000,
                           1000);
+    
+    std::string str = "AAAAAAAA";
+
+    str += "    \t";
+    mgr.yield();
+    str += "BBBBBBBBBBBBBBBBBBBBB";
+
+    mgr.yield();
+    
+    thread_safe_print("%.*s\n", str.size(), str.c_str());
 }
 
 int main() {

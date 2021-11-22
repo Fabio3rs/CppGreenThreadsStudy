@@ -48,27 +48,36 @@ class GreenThreadMgr {
     template <typename rawfn_T, class... Types>
     size_t new_thread_custom(rawfn_T fun, Types &&... args) {
         using args_tuple_t = decltype(std::tuple{std::forward<Types>(args)...});
-        std::function thrfn{fun};
 
-        threads.push_back({nullptr, this, nullptr});
-        auto &greenthrd = threads.back();
+        typedef struct
+        {
+            args_tuple_t argument_tuple;
+            rawfn_T thread_start_fn;
+        } GreenThreadData;
 
-        auto argstuple = new (greenthrd.prepare_stack(sizeof(args_tuple_t)))
-            std::tuple{std::forward<Types>(args)...};
+        auto forward_args_lambda_wrapper = [](GreenThreadMgr &inst,
+                                                 void *argsdata) {
+            GreenThreadData &oldthrdata = *reinterpret_cast<GreenThreadData *>(argsdata);
+            GreenThreadData fnargs = std::move(oldthrdata);
 
-        auto forward_args_lambda_wrapper = [thrfn](GreenThreadMgr &inst,
-                                                   void *argsdata) {
-            args_tuple_t &fnargs = *reinterpret_cast<args_tuple_t *>(argsdata);
+            std::function thrfn{fnargs.thread_start_fn};
+
+            oldthrdata.~GreenThreadData();
 
             std::apply(
                 [thrfn, &inst](auto &&... argsq) { thrfn(inst, argsq...); },
-                fnargs);
+                fnargs.argument_tuple);
 
             return 0;
         };
 
-        greenthrd.set_arg(argstuple);
-        greenthrd.thrfn = forward_args_lambda_wrapper;
+        threads.push_back({forward_args_lambda_wrapper, this, nullptr});
+        auto &greenthrd = threads.back();
+
+        auto argsdata = new (greenthrd.prepare_stack(sizeof(GreenThreadData)))
+            GreenThreadData{std::tuple{std::forward<Types>(args)...}, fun};
+
+        greenthrd.set_arg(argsdata);
 
         return threads.size();
     }
