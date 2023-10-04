@@ -2,7 +2,33 @@
 #include "contextswap.h"
 #include <cstdio>
 #include <cstdlib>
+#include <stack>
 #include <stdexcept>
+
+namespace {
+struct CoRoutinesStack {
+    std::stack<CoRoutinesStack> stack;
+};
+
+__thread CoRoutinesStack *thread_mgr{};
+} // namespace
+
+void GreenThreadMgr::init_coroutines() {
+    if (thread_mgr) {
+        return;
+    }
+
+    thread_mgr = new CoRoutinesStack;
+}
+
+void GreenThreadMgr::drop_coroutines() {
+    if (!thread_mgr) {
+        return;
+    }
+
+    delete thread_mgr;
+    thread_mgr = nullptr;
+}
 
 union registeru_t {
     uintptr_t reguint;
